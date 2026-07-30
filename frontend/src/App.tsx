@@ -5,6 +5,7 @@ import AccountDetailsPage from '@/pages/AccountDetailsPage'
 import CreateAccountPage from '@/pages/CreateAccountPage'
 import DepositPage from '@/pages/DepositPage'
 import LoginPage from '@/pages/LoginPage'
+import LearnPage from '@/pages/LearnPage'
 import TransactionHistoryPage from '@/pages/TransactionHistoryPage'
 import WithdrawPage from '@/pages/WithdrawPage'
 import { paths } from '@/routes/paths'
@@ -29,6 +30,7 @@ function App() {
           <Route path="deposit" element={<DepositPage />} />
           <Route path="withdraw" element={<WithdrawPage />} />
           <Route path="transactions" element={<TransactionHistoryPage />} />
+          <Route path="learn" element={<LearnPage />} />
         </Route>
       </Route>
 
