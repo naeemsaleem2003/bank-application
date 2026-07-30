@@ -1,6 +1,7 @@
 import type { Account, BankTransaction, MoneyResult, User } from '@/types/bank'
 
-const API_URL = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000').replace(/\/$/, '')
+const DEFAULT_API_URL = `${window.location.protocol}//${window.location.hostname}:8000`
+const API_URL = (import.meta.env.VITE_API_URL || DEFAULT_API_URL).replace(/\/$/, '')
 
 export class ApiError extends Error {
   status: number
@@ -12,17 +13,13 @@ export class ApiError extends Error {
   }
 }
 
-interface RequestOptions extends RequestInit {
-  token?: string | null
-}
-
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { token, headers, ...requestOptions } = options
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const { headers, ...requestOptions } = options
   const response = await fetch(`${API_URL}${path}`, {
     ...requestOptions,
+    credentials: 'include',
     headers: {
       ...(requestOptions.body instanceof URLSearchParams ? {} : { 'Content-Type': 'application/json' }),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...headers,
     },
   })
@@ -81,39 +78,42 @@ export const bankApi = {
   },
 
   async login(email: string, password: string) {
-    const body = new URLSearchParams({ username: email, password })
-    return request<{ access_token: string; token_type: string }>('/auth/token', {
+    const raw = await request<Record<string, unknown>>('/auth/login', {
       method: 'POST',
-      body,
+      body: JSON.stringify({ email, password }),
     })
+    return normalizeUser(raw)
   },
 
-  async me(token: string) {
-    return normalizeUser(await request<Record<string, unknown>>('/auth/me', { token }))
+  async logout() {
+    await request<void>('/auth/logout', { method: 'POST' })
   },
 
-  async accounts(token: string) {
-    const rows = await request<Record<string, unknown>[]>('/accounts', { token })
+  async me() {
+    return normalizeUser(await request<Record<string, unknown>>('/auth/me'))
+  },
+
+  async accounts() {
+    const rows = await request<Record<string, unknown>[]>('/accounts')
     return rows.map(normalizeAccount)
   },
 
-  async createAccount(token: string, accountType: Account['accountType']) {
+  async createAccount(accountType: Account['accountType']) {
     const raw = await request<Record<string, unknown>>(`/accounts?account_type=${accountType}`, {
       method: 'POST',
-      token,
     })
     return normalizeAccount(raw)
   },
 
-  async transactions(token: string, accountId: number) {
-    const rows = await request<Record<string, unknown>[]>(`/accounts/${accountId}/transactions`, { token })
+  async transactions(accountId: number) {
+    const rows = await request<Record<string, unknown>[]>(`/accounts/${accountId}/transactions`)
     return rows.map(normalizeTransaction)
   },
 
-  async moveMoney(token: string, accountId: number, action: 'deposit' | 'withdraw', amount: number) {
+  async moveMoney(accountId: number, action: 'deposit' | 'withdraw', amount: number) {
     const raw = await request<Omit<MoneyResult, 'transaction'> & { transaction: Record<string, unknown> }>(
       `/accounts/${accountId}/${action}`,
-      { method: 'POST', token, body: JSON.stringify({ amount }) },
+      { method: 'POST', body: JSON.stringify({ amount }) },
     )
     return { ...raw, transaction: normalizeTransaction(raw.transaction) }
   },

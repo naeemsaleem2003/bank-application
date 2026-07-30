@@ -11,9 +11,9 @@ import { paths } from '@/routes/paths'
 import { Toaster } from '@/components/ui/sonner'
 
 function ProtectedRoute() {
-  const { token, loading } = useAuth()
+  const { user, loading } = useAuth()
   if (loading) return <div className="grid min-h-screen place-items-center"><div className="brand-loader" aria-label="Loading" /></div>
-  return token ? <Outlet /> : <Navigate to={paths.login} replace />
+  return user ? <Outlet /> : <Navigate to={paths.login} replace />
 }
 
 function App() {

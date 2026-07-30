@@ -19,7 +19,7 @@ interface BankContextValue {
 const BankContext = createContext<BankContextValue | null>(null)
 
 export function BankProvider({ children }: { children: ReactNode }) {
-  const { token } = useAuth()
+  const { user } = useAuth()
   const [accounts, setAccounts] = useState<Account[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [transactions, setTransactions] = useState<BankTransaction[]>([])
@@ -27,17 +27,17 @@ export function BankProvider({ children }: { children: ReactNode }) {
   const selectedAccount = accounts.find((account) => account.accountId === selectedId) ?? accounts[0] ?? null
 
   const refresh = useCallback(async () => {
-    if (!token) return
+    if (!user) return
     setLoading(true)
     try {
-      const nextAccounts = await bankApi.accounts(token)
+      const nextAccounts = await bankApi.accounts()
       setAccounts(nextAccounts)
       const activeId = nextAccounts.some((account) => account.accountId === selectedId)
         ? selectedId
         : nextAccounts[0]?.accountId ?? null
       setSelectedId(activeId)
       const accountTransactions = await Promise.all(
-        nextAccounts.map((account) => bankApi.transactions(token, account.accountId)),
+        nextAccounts.map((account) => bankApi.transactions(account.accountId)),
       )
       setTransactions(
         accountTransactions.flat().sort((left, right) => {
@@ -48,33 +48,33 @@ export function BankProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false)
     }
-  }, [token, selectedId])
+  }, [user, selectedId])
 
   useEffect(() => {
     // The provider intentionally refreshes its server-backed state when auth changes.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void refresh()
-  }, [token]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const selectAccount = useCallback((id: number) => {
     setSelectedId(id)
   }, [])
 
   const createAccount = useCallback(async (type: Account['accountType']) => {
-    if (!token) return
-    const account = await bankApi.createAccount(token, type)
+    if (!user) return
+    const account = await bankApi.createAccount(type)
     setAccounts((current) => [
       ...current.filter((item) => item.accountId !== account.accountId),
       account,
     ])
     setSelectedId(account.accountId)
-  }, [token])
+  }, [user])
 
   const moveMoney = useCallback(async (action: 'deposit' | 'withdraw', amount: number) => {
-    if (!token || !selectedAccount) return
-    await bankApi.moveMoney(token, selectedAccount.accountId, action, amount)
+    if (!user || !selectedAccount) return
+    await bankApi.moveMoney(selectedAccount.accountId, action, amount)
     await refresh()
-  }, [token, selectedAccount, refresh])
+  }, [user, selectedAccount, refresh])
 
   const value = useMemo(() => ({ accounts, selectedAccount, transactions, loading, selectAccount, refresh, createAccount, moveMoney }), [accounts, selectedAccount, transactions, loading, selectAccount, refresh, createAccount, moveMoney])
   return <BankContext.Provider value={value}>{children}</BankContext.Provider>

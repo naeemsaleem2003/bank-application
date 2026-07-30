@@ -118,7 +118,8 @@ http://127.0.0.1:8000/docs
 ### Auth
 
 - POST /auth/register
-- POST /auth/token
+- POST /auth/login
+- POST /auth/logout
 - GET /auth/me
 
 ### Accounts

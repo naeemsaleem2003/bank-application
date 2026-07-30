@@ -8,12 +8,12 @@ import { useAuth } from '@/context/AuthContext'
 import { paths } from '@/routes/paths'
 
 function LoginPage() {
-  const { login, token } = useAuth()
+  const { login, user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [error, setError] = useState('')
   const registered = Boolean((location.state as { registered?: boolean } | null)?.registered)
-  if (token) return <Navigate to={paths.account} replace />
+  if (user) return <Navigate to={paths.account} replace />
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -45,7 +45,7 @@ function LoginPage() {
           <div className="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-gradient-to-t from-[#0d332a] to-transparent px-6 pb-5 pt-16 text-sm font-medium"><RiSparkling2Line className="size-4 text-amber-300" /> Let your balance do the heavy lifting</div>
         </div>
         <div className="relative z-10 grid grid-cols-3 gap-4 text-sm text-emerald-50/70">
-          <span className="flex items-center gap-2"><RiLock2Line /> JWT protected</span><span className="flex items-center gap-2"><RiPulseLine /> Live activity</span><span className="flex items-center gap-2"><RiBankLine /> MongoDB backed</span>
+          <span className="flex items-center gap-2"><RiLock2Line /> Secure sessions</span><span className="flex items-center gap-2"><RiPulseLine /> Live activity</span><span className="flex items-center gap-2"><RiBankLine /> MongoDB backed</span>
         </div>
       </section>
       <section className="login-form-panel flex items-center justify-center p-6 sm:p-10">
@@ -54,7 +54,6 @@ function LoginPage() {
           {registered && <Alert className="mb-4 border-emerald-200 bg-emerald-50"><AlertDescription>Your profile is ready. Sign in to access your accounts.</AlertDescription></Alert>}
           {error && <Alert className="mb-4" variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
           <LoginForm onSubmit={handleSubmit} />
-          {/* <p className="mt-5 text-center text-xs text-muted-foreground">Your session token is kept only for this browser tab.</p> */}
         </div>
       </section>
     </main>

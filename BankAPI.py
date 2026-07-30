@@ -1,8 +1,8 @@
 import os
+from typing import Optional
 
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Cookie, Depends, FastAPI, HTTPException, Response, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 
 from repositories.AccountRepository import AccountRepository
@@ -40,7 +40,7 @@ auth_service = AuthService(user_repository)
 account_service = AccountService(account_repository, user_repository)
 transaction_service = TransactionService(account_repository, transaction_repository)
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
+SESSION_COOKIE_NAME = os.getenv("SESSION_COOKIE_NAME", "bank_session")
 
 
 class AmountRequest(BaseModel):
@@ -49,6 +49,11 @@ class AmountRequest(BaseModel):
 
 class RegisterRequest(BaseModel):
     name: str
+    email: str
+    password: str
+
+
+class LoginRequest(BaseModel):
     email: str
     password: str
 
@@ -66,13 +71,40 @@ def _authentication_error():
     return HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
     )
 
 
-def get_current_user(token: str = Depends(oauth2_scheme)):
+def _cookie_secure():
+    return os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
+
+
+def _set_session_cookie(response: Response, session_id: str):
+    response.set_cookie(
+        key=SESSION_COOKIE_NAME,
+        value=session_id,
+        httponly=True,
+        secure=_cookie_secure(),
+        samesite="lax",
+        max_age=auth_service.session_max_age_seconds(),
+        path="/",
+    )
+
+
+def _clear_session_cookie(response: Response):
+    response.delete_cookie(
+        key=SESSION_COOKIE_NAME,
+        httponly=True,
+        secure=_cookie_secure(),
+        samesite="lax",
+        path="/",
+    )
+
+
+def get_current_user(
+    session_id: Optional[str] = Cookie(default=None, alias=SESSION_COOKIE_NAME),
+):
     try:
-        return auth_service.get_user_from_token(token)
+        return auth_service.get_user_from_session(session_id)
     except AuthenticationError:
         raise _authentication_error()
 
@@ -87,15 +119,24 @@ def register(body: RegisterRequest):
         raise HTTPException(status_code=400, detail=str(error))
 
 
-@app.post("/auth/token")
-def login(form: OAuth2PasswordRequestForm = Depends()):
-    # OAuth2 calls the login identifier "username"; this API expects an email.
+@app.post("/auth/login")
+def login(body: LoginRequest, response: Response):
     try:
-        user = auth_service.authenticate(form.username, form.password)
-        token = auth_service.create_access_token(user)
+        user = auth_service.authenticate(body.email, body.password)
+        session_id = auth_service.create_session(user)
     except AuthenticationError:
         raise _authentication_error()
-    return {"access_token": token, "token_type": "bearer"}
+    _set_session_cookie(response, session_id)
+    return _serialize_user(user)
+
+
+@app.post("/auth/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout(
+    response: Response,
+    session_id: Optional[str] = Cookie(default=None, alias=SESSION_COOKIE_NAME),
+):
+    auth_service.revoke_session(session_id)
+    _clear_session_cookie(response)
 
 
 @app.get("/auth/me")

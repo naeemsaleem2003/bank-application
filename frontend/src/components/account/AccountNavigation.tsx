@@ -8,8 +8,8 @@ function AccountNavigation() {
   const { logout, user } = useAuth()
   const navigate = useNavigate()
 
-  function handleLogout() {
-    logout()
+  async function handleLogout() {
+    await logout()
     navigate(paths.login)
   }
 

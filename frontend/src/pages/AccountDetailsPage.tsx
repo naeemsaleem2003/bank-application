@@ -19,7 +19,7 @@ function CashFlow() {
 }
 
 function SecurityCard() {
-  return <section className="rounded-[1.6rem] bg-[#164e40] p-6 text-white shadow-xl"><div className="flex items-start justify-between"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-emerald-200">Security center</p><h2 className="mt-1 font-heading text-xl font-semibold">Your session is protected</h2></div><RiShieldCheckLine className="size-7 text-emerald-200" /></div><div className="mt-7 space-y-3 text-sm text-emerald-50/80"><p className="flex items-center gap-2"><RiLock2Line className="size-4" /> JWT identity verified</p><p className="flex items-center gap-2"><RiSparkling2Line className="size-4" /> Account ownership enforced</p></div></section>
+  return <section className="rounded-[1.6rem] bg-[#164e40] p-6 text-white shadow-xl"><div className="flex items-start justify-between"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-emerald-200">Security center</p><h2 className="mt-1 font-heading text-xl font-semibold">Your session is protected</h2></div><RiShieldCheckLine className="size-7 text-emerald-200" /></div><div className="mt-7 space-y-3 text-sm text-emerald-50/80"><p className="flex items-center gap-2"><RiLock2Line className="size-4" /> Session identity verified</p><p className="flex items-center gap-2"><RiSparkling2Line className="size-4" /> Account ownership enforced</p></div></section>
 }
 
 function AccountDetailsPage() {

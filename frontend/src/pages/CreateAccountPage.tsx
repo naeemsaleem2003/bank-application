@@ -58,8 +58,8 @@ function RegisterProfile() {
 }
 
 function CreateAccountPage() {
-  const { token } = useAuth()
-  return token ? <NewBankAccount /> : <RegisterProfile />
+  const { user } = useAuth()
+  return user ? <NewBankAccount /> : <RegisterProfile />
 }
 
 export default CreateAccountPage
