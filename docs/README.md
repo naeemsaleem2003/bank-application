@@ -2,6 +2,21 @@
 
 A simple banking system for learning backend architecture and service-layer business rules.
 
+## Live Demo
+
+**[Open the deployed Dinero bank application](https://66pqkdw2m8.execute-api.us-east-1.amazonaws.com/)**
+
+The application is hosted on AWS through API Gateway and Lambda. To test it:
+
+1. Create a profile with a name, email address, and password.
+2. Sign in and open a checking or savings account.
+3. Make a deposit or withdrawal.
+4. Confirm the balance and transaction history update.
+
+Use test information only. Do not enter real banking details or reuse an important
+password. Developers can also explore the deployed
+**[API documentation](https://66pqkdw2m8.execute-api.us-east-1.amazonaws.com/docs)**.
+
 ## Features
 
 - Register and log in
@@ -13,7 +28,8 @@ A simple banking system for learning backend architecture and service-layer busi
 
 ## Current Implementation
 
-This repository now uses MongoDB repositories for persistence.
+This full-stack application uses a React/Vite frontend, FastAPI backend, JWT
+authentication, MongoDB persistence, and an AWS Lambda deployment.
 
 - AccountRepository reads and writes account data in MongoDB
 - UserRepository reads and writes user data in MongoDB
@@ -36,10 +52,15 @@ repositories/
 
 services/
     account_service.py
+    auth_service.py
     transaction_service.py
 
+frontend/
+    src/
+
 BankAPI.py
-main.py
+Dockerfile
+requirements.txt
 ```
 
 ## Architecture
@@ -58,7 +79,13 @@ main.py
 
 ## Quick Start
 
-### 1. Create and activate a virtual environment
+### Prerequisites
+
+- Python 3
+- Node.js 18 or newer
+- A MongoDB Atlas database or compatible MongoDB instance
+
+### 1. Create and activate a Python virtual environment
 
 ```bash
 python3 -m venv .venv
@@ -73,28 +100,40 @@ pip install -r requirements.txt
 
 ### 3. Configure MongoDB
 
-```bash
-cp .env.example .env
+Create a `.env` file in the repository root:
+
+```dotenv
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>/
+JWT_SECRET_KEY=<a-random-secret-with-at-least-32-characters>
 ```
 
-Set the following values in `.env`:
-
-- MONGODB_URI (Atlas connection string)
-- MONGODB_DB_NAME (example: bank_application)
-
-Optional values:
-
-- MONGODB_USERS_COLLECTION
-- MONGODB_ACCOUNTS_COLLECTION
-- MONGODB_TRANSACTIONS_COLLECTION
+Replace both placeholders with your own development values. The application uses
+the `bank_application` database and never requires real customer information.
 
 ### 4. Run the API
 
 ```bash
-py -m uvicorn BankAPI:app --reload
+python -m uvicorn BankAPI:app --reload
 ```
 
-### 5. Test with real MongoDB entries
+The interactive local API documentation is available at
+`http://127.0.0.1:8000/docs`.
+
+### 5. Run the frontend
+
+In a second terminal:
+
+```bash
+cd frontend
+cp .env.example .env.local
+npm ci
+npm run dev
+```
+
+Open `http://localhost:5173` and follow the same test flow described under
+**Live Demo**.
+
+### 6. Run the MongoDB smoke test
 
 After configuring `.env`, run the smoke test from the project root:
 
@@ -106,11 +145,22 @@ The test connects to the configured database and leaves behind one uniquely name
 sample user, one checking account, a deposit, and a withdrawal. It verifies that
 the final balance is `100.25` and that both transaction records can be read back.
 
-You can inspect the entries in MongoDB Atlas under **Database > Browse Collections**,
-or start the API and use its interactive documentation at:
+You can inspect the resulting entries in MongoDB Atlas under
+**Database > Browse Collections**.
 
-```text
-http://127.0.0.1:8000/docs
+## Verification
+
+Run the backend unit tests from the repository root:
+
+```bash
+python -m unittest discover -s tests
+```
+
+Validate the frontend from `frontend/`:
+
+```bash
+npm run lint
+npm run build
 ```
 
 ## API Endpoints
@@ -126,12 +176,6 @@ http://127.0.0.1:8000/docs
 - GET /accounts
 - GET /accounts/{account_id}
 - POST /accounts
-
-### Users
-
-- GET /users
-- GET /users/{user_id}
-- POST /users
 
 ### Transactions
 
